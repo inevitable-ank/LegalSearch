@@ -51,13 +51,13 @@ Log into [the Voyage AI dashboard](https://dash.voyageai.com/) and create a new 
 
 #### Dependency installation 
 
-From the project root directory, run the following command....
+From the project root directory, run the following command.
 
 ```bash
 cd legal-semantic-search && npm install --force
 ```
 
-Make sure you have populated the client `.env` with relevant keys...
+Make sure you have populated the client `.env` with relevant keys.
 
 ```bash
 # You must first activate a Billing Account here: https://www.voyageai.com/ 
@@ -292,9 +292,5 @@ const retrieved = await vectorStore.maxMarginalRelevanceSearch(query, { k: 20 })
 ```
 
 U p d a t e   c o n t r i b u t o r s   c a c h e 
- 
- U p d a t e   c o n t r i b u t o r s   c a c h e 
- 
- #   L e g a l S e a r c h 
  
  
