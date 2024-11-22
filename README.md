@@ -10,7 +10,7 @@ Use natural language to search over legal cases stored in PDFs using Pinecone, L
 
 This app demonstrates how to programmatically bootstrap a custom knowledge base based on a Pinecone vector database with arbitrary PDF files included in the codebase.
 
-The sample app use case is focused on semantic search over legal documents, but this exact same technique and code can be applied to any content stored locally.
+The sample app use case is focused on semantic search over legal documents, but this exact same technique and code can be applied to any content stored locally...
 
 ### Built With
 
@@ -20,7 +20,7 @@ The sample app use case is focused on semantic search over legal documents, but 
 - Next.js + tailwind
 - Node version 20 or higher
 
----
+--------------
 
 ## Running the Sample App
 
@@ -41,9 +41,9 @@ If you don't already have an index, the application will create one for you with
 
 ### Create a Voyage embeddings API key
 
-Create a new account [here](https://www.voyageai.com/). 
+Create a new account [here](https://www.voyageai.com/).....
 
-Log into [the Voyage AI dashboard](https://dash.voyageai.com/) and create a new API key [here].
+Log into [the Voyage AI dashboard](https://dash.voyageai.com/) and create a new API key [here]..
 
 ### Start the project
 
@@ -51,13 +51,13 @@ Log into [the Voyage AI dashboard](https://dash.voyageai.com/) and create a new 
 
 #### Dependency installation 
 
-From the project root directory, run the following command.
+From the project root directory, run the following command....
 
 ```bash
 cd legal-semantic-search && npm install --force
 ```
 
-Make sure you have populated the client `.env` with relevant keys.
+Make sure you have populated the client `.env` with relevant keys...
 
 ```bash
 # You must first activate a Billing Account here: https://www.voyageai.com/ 
@@ -291,3 +291,10 @@ const vectorStore = new PineconeStore(voyageEmbeddings, {
 const retrieved = await vectorStore.maxMarginalRelevanceSearch(query, { k: 20 });
 ```
 
+U p d a t e   c o n t r i b u t o r s   c a c h e 
+ 
+ U p d a t e   c o n t r i b u t o r s   c a c h e 
+ 
+ #   L e g a l S e a r c h 
+ 
+ 
