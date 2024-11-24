@@ -2,9 +2,12 @@
 
 import { NextResponse } from "next/server";
 import { createIndexIfNeccessary, pineconeIndexHasVectors } from "./pincone";
+import { Pinecone } from "@pinecone-database/pinecone";
 import path from "path";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { VoyageEmbeddings } from "@langchain/community/embeddings/voyage";
+import { v4 as uuidv4 } from "uuid";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { error } from "console";
 import {promises as fs } from "fs";
@@ -22,6 +25,32 @@ const readMetadata = async (): Promise<Document["metadata"][]> => {
         return[];
     }
 }
+
+const flattenMetadata = (metadata: any): Document["metadata"] => {
+    const flatMetadata = { ...metadata };
+    if (flatMetadata.pdf) {
+      if (flatMetadata.pdf.pageCount) {
+        flatMetadata.totalPages = flatMetadata.pdf.pageCount;
+      }
+      delete flatMetadata.pdf;
+    }
+    if (flatMetadata.loc) {
+      delete flatMetadata.loc;
+    }
+    return flatMetadata;
+  };
+
+  const batchUpserts = async (
+    index: any,
+    vectors: any[],
+    batchSize: number = 50
+  ) => {
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+      console.log(`Upserting batch ${i + 1} of ${batch.length} vectors...`);
+      await index.upsert(batch);
+    }
+  };
 export const initiateBootStrapping = async(targetIndex: string) => {
     const baseURL = process.env.PRODUCTION_URL ? `https://${process.env.PRODUCTION_URL}` : `http://localhost:${process.env.PORT}`
 
@@ -109,9 +138,86 @@ export const handleBootStrapping = async(targetIndex: string) => {
                 splits.length / BATCH_SIZE
               )}`
             );
-      
-    } catch (error) {
-        
-    }
-}
 
+            const validBatch = batch.filter((split) =>
+                isValidContent(split.pageContent)
+              );
+              if (validBatch.length === 0) {
+                console.log("Skipping batch - no valid content");
+                continue;
+              }
+
+              const castedBatch: Document[] = validBatch.map((split) => ({
+                pageContent: split.pageContent.trim(),
+                metadata: {
+                  ...flattenMetadata(split.metadata as Document["metadata"]),
+                  id: uuidv4(),
+                  pageContent: split.pageContent.trim(),
+                },
+              }));
+            try {
+                const voyageEmbeddings = new VoyageEmbeddings({
+                    apiKey: process.env.VOYAGE_API_KEY,
+                    inputType: "document",
+                    modelName: "voyage-law-2",
+                  });
+
+                  const pageContents = castedBatch.map((split) => split.pageContent);
+                  console.log(`Generating embeddings for ${pageContents.length} chunks`);
+          
+                  const embeddings = await voyageEmbeddings.embedDocuments(pageContents);
+          
+                  if (!embeddings || embeddings.length !== pageContents.length) {
+                    console.error("Invalid embeddings response", {
+                      expected: pageContents.length,
+                      received: embeddings?.length,
+                    });
+                    continue;
+                  }
+
+                  const vectors = castedBatch.map((split, index) => ({
+                    id: split.metadata.id!,
+                    values: embeddings[index],
+                    metadata: split.metadata,
+                  }));
+                  const pc = new Pinecone({
+                    apiKey: process.env.PINECONE_API_KEY!,
+                  });
+          
+                  const index = pc.Index(targetIndex);
+                  await batchUpserts(index, vectors, 2);
+          
+
+            } catch (error) {
+                console.error(
+                    `Error processing batch ${Math.floor(i / BATCH_SIZE) + 1}:`,
+                    {
+                      error: error instanceof Error ? error.message : "Unknown error",
+                      batchSize: castedBatch.length,
+                    }
+                  );
+                  continue;
+            
+                }    
+            }  
+    } catch (error: any) {
+        console.error("Error during bootstrap procedure:", {
+          message: error.message,
+          cause: error.cause?.message,
+          stack: error.stack,
+        });
+    
+        if (error.code === "UND_ERR_CONNECT_TIMEOUT") {
+          return NextResponse.json(
+            { error: "Operation timed out - please try again" },
+            { status: 504 }
+          );
+        }
+    
+        return NextResponse.json(
+          { error: "Bootstrap procedure failed" },
+          { status: 500 }
+        );
+      }
+    }
+};

@@ -1,7 +1,4 @@
-import {NextResponse} from 'next/server'
-
-export async function Post(){
-    // initiate bootstrapping
-
-    await initiateBootStrapping()
-}
+import { NextResponse } from "next/server";
+import { Pinecone } from "@pinecone-database/pinecone";
+import { VoyageEmbeddings } from "@langchain/community/embeddings/voyage";
+import { PineconeStore } from "@langchain/pinecone"
